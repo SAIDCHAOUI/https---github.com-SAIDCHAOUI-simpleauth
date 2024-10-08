@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 mongoose.set('strictQuery', false);
 
 // Connecter à MongoDB
-mongoose.connect('mongodb://localhost:27017/auth', {
+mongoose.connect('mongodb://localhost:27017/test', {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(() => {
@@ -19,7 +19,7 @@ var app = express();
 const router = express.Router();
 
 app.use(express.json()); // Used to parse JSON bodies
-app.use(express.urlencoded()); //Parse URL-encoded bodies
+app.use(express.urlencoded({ extended: true })); //Parse URL-encoded bodies
 
 app.set('view engine', 'ejs');
 
@@ -37,11 +37,24 @@ const User = require('/Users/chaou/Desktop/TP_2_Authentication_amp_Access_Contro
 
 app.post('/register', async function (req, res) {
     try {
+        console.log(req.body);
+        console.log("Nom d'utilisateur :", req.body.username);
         // 1- Récupérer les données du formulaire
-        const { email, password } = req.body;
+        const { username, email, password, role } = req.body;
+
+        // Vérifiez si tous les champs sont fournis
+        if (!username || !email || !password) {
+            return res.status(400).send("Tous les champs sont requis !");
+        }
+
+        // Vérifier si l'utilisateur existe déjà
+        const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+        if (existingUser) {
+            return res.status(400).send("Un utilisateur avec ce nom d'utilisateur ou cet email existe déjà.");
+        }
 
         // 2- Créer un nouvel utilisateur avec les données récupérées
-        const newUser = new User({ email, password });
+        const newUser = new User({ username, email, password, role });
 
         // 3- Sauvegarder l'utilisateur dans la base de données MongoDB
         await newUser.save();
@@ -52,7 +65,12 @@ app.post('/register', async function (req, res) {
         res.render('login');
     } catch (err) {
         console.error("Erreur lors de l'inscription de l'utilisateur :", err);
-        res.status(500).send("Erreur lors de l'inscription");
+        if (err.code === 11000) {
+            // Erreur de clé dupliquée
+            res.status(400).send("Ce nom d'utilisateur ou cet email est déjà utilisé.");
+        } else {
+            res.status(500).send("Erreur lors de l'inscription");
+        }
     }
 });
 

@@ -8,13 +8,22 @@ document.addEventListener('DOMContentLoaded', function () {
         // Add submit event listener to the register form
         registerForm.addEventListener('submit', function (event) {
             // Get the values of the email, password, and password confirmation fields
+            const username = document.getElementById('username').value;
             const email = document.getElementById('email').value;
+            const role = document.getElementById('role').value;
             const password = document.getElementById('password').value;
             const passwordConfirm = document.getElementById('passwordConfirm').value;
 
             // Regex patterns for validations
             const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Email validation pattern
             const strongPasswordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s])[A-Za-z\d\W\S]{6,}$/; // Strong password validation pattern
+            
+            // Validation du nom d'utilisateur
+            if (!username.trim()) {
+                alert("Veuillez entrer un nom d'utilisateur valide.");
+                event.preventDefault();
+                return;
+            }
 
             // Validate email format
             if (!emailPattern.test(email)) {

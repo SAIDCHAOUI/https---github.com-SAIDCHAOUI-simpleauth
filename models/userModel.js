@@ -4,6 +4,11 @@ const bcrypt = require('bcrypt');
 
 // Définition du schéma utilisateur
 const userSchema = new mongoose.Schema({
+    username: {
+        type: String,
+        required: true,
+        unique: true // Assure l'unicité du nom d'utilisateur
+    },
     email: {
         type: String,
         required: true,
@@ -17,7 +22,7 @@ const userSchema = new mongoose.Schema({
     role: {
         type: String,
         enum: ['user', 'admin'], // Le rôle peut être soit 'user' soit 'admin'
-        default: 'user'
+        default: 'user' // Définit le rôle par défaut à 'user'
     }
 });
 
@@ -36,7 +41,5 @@ userSchema.pre('save', async function (next) {
     }
 });
 
-// Création du modèle utilisateur
 const User = mongoose.model('User', userSchema);
-
 module.exports = User;
