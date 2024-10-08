@@ -12,12 +12,12 @@ const router = express.Router();
 const app = express();
 // Définir le moteur de vue
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views')); // Assurez-vous que ceci est correct
+app.set('views', path.join(__dirname, 'views')); 
 
 
 // Configuration de la session
 app.use(session({
-    secret: 'votre_clé_secrète_de_session', // Remplacez par votre propre clé secrète
+    secret: 'clé_secrète_de_session', 
     resave: false,
     saveUninitialized: false
 }));
