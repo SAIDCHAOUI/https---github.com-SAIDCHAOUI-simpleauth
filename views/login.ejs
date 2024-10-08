@@ -1,0 +1,24 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="/style/style.css" media="screen" type="text/css"/>
+    <script src="/js/script.js" defer></script>
+</head>
+<body>
+    <div id="container">
+        <!-- Formulaire de connexion avec validation côté client -->
+        <form action="/login" method="POST" id="loginForm">
+            <h1>Connexion</h1>
+
+            <label><b>Email</b></label>
+            <input type="text" placeholder="Entrer l'email" name="email" id="loginEmail" required>
+
+            <label><b>Mot de passe</b></label>
+            <input type="password" placeholder="Entrer le mot de passe" name="password" id="loginPassword" required>
+
+            <input type="submit" id='submit' value='LOGIN'>
+            <a href="/register" class="btn btn-success ml-2">Register</a><br/>
+        </form>
+    </div>
+</body>
+</html>
