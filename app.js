@@ -1,48 +1,79 @@
-//app.js
+// app.js
+
+const express = require("express");
 const mongoose = require('mongoose');
-mongoose.set('strictQuery', false);
+const path = require('path');
+const session = require('express-session');
+const { grantAccess } = require('/Users/chaou/Desktop/TP_2_Authentication_amp_Access_Control-20241008/simpleAuth/config/middleware');
+const userController = require('/Users/chaou/Desktop/TP_2_Authentication_amp_Access_Control-20241008/simpleAuth/config/userController');
+const User = require('/Users/chaou/Desktop/TP_2_Authentication_amp_Access_Control-20241008/simpleAuth/models/userModel'); // Importer le modèle utilisateur
+const router = express.Router();
+
+const app = express();
+// Définir le moteur de vue
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views')); // Assurez-vous que ceci est correct
+
+
+// Configuration de la session
+app.use(session({
+    secret: 'votre_clé_secrète_de_session', // Remplacez par votre propre clé secrète
+    resave: false,
+    saveUninitialized: false
+}));
 
 // Connecter à MongoDB
+mongoose.set('strictQuery', false);
 mongoose.connect('mongodb://localhost:27017/test', {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(() => {
-    console.log("Connected to MongoDB");
+    console.log("Connecté à MongoDB");
 }).catch(err => {
-    console.error("Error connecting to MongoDB", err);
+    console.error("Erreur de connexion à MongoDB", err);
 });
 
-var express = require("express");
-const path = require('path');
+// Middlewares
+app.use(express.json()); // Pour parser les corps de requête JSON
+app.use(express.urlencoded({ extended: true })); // Pour parser les corps de requête URL-encodés
+app.use(express.static(path.join(__dirname, 'public'))); // Servir les fichiers statiques
 
-var app = express();
-const router = express.Router();
-
-app.use(express.json()); // Used to parse JSON bodies
-app.use(express.urlencoded({ extended: true })); //Parse URL-encoded bodies
-
+// Définir le moteur de vue
 app.set('view engine', 'ejs');
 
-app.use(express.static(__dirname + '/public'));
+// Middleware pour peupler req.user à partir de la session
+app.use(function(req, res, next) {
+    if (req.session.userId) {
+        req.user = {
+            id: req.session.userId,
+            role: req.session.role,
+            username: req.session.username
+        };
+    }
+    next();
+});
 
+// Routes
+
+// Page d'accueil
 router.get("/", function (req, res) {
     res.render('index');
 });
 
+// Formulaire d'inscription
 router.get("/register", function (req, res) {
     res.render('register');
 });
 
-const User = require('/Users/chaou/Desktop/TP_2_Authentication_amp_Access_Control-20241008/simpleAuth/models/userModel'); // Importer le modèle utilisateur
-
-app.post('/register', async function (req, res) {
+// Route d'inscription
+router.post('/register', async function (req, res) {
     try {
         console.log(req.body);
         console.log("Nom d'utilisateur :", req.body.username);
         // 1- Récupérer les données du formulaire
         const { username, email, password, role } = req.body;
 
-        // Vérifiez si tous les champs sont fournis
+        // Vérifier si tous les champs sont fournis
         if (!username || !email || !password) {
             return res.status(400).send("Tous les champs sont requis !");
         }
@@ -74,26 +105,70 @@ app.post('/register', async function (req, res) {
     }
 });
 
-//Showing login form
+// Afficher le formulaire de connexion
 router.get("/login", function (req, res) {
     res.render('login');
 });
 
-app.post('/login', function(req, res){
-    //1- get data 
-    console.log(req.body);
-    
-    //2- authenticate user 
+// Route de connexion
+router.post('/login', async function(req, res){
+    try {
+        // 1- Récupérer les données du formulaire
+        const { email, password } = req.body;
 
-    //3- if success redirect to home page 
-    //res.render('home');
+        // 2- Authentifier l'utilisateur
+        const user = await User.findOne({ email });
+        if (!user) {
+            // Si l'utilisateur n'existe pas, renvoyer une erreur
+            return res.status(401).send("Email ou mot de passe incorrect");
+        }
 
+        // Comparer les mots de passe
+        const match = await user.comparePassword(password);
+        if (!match) {
+            // Si le mot de passe ne correspond pas, renvoyer une erreur
+            return res.status(401).send("Email ou mot de passe incorrect");
+        }
+
+        // 3- Si succès, stocker les informations de l'utilisateur dans la session
+        req.session.userId = user._id;
+        req.session.role = user.role;
+        req.session.username = user.username;
+
+        // Rediriger vers la page des utilisateurs
+        res.redirect('/users');
+    } catch (error) {
+        console.error("Erreur lors de la connexion :", error);
+        res.status(500).send("Erreur lors de la connexion");
+    }
 });
 
+// Route pour lister tous les utilisateurs
+router.get('/users', function(req, res, next) {
+    if (!req.session.userId) {
+        return res.status(401).send("Vous devez être connecté pour accéder à cette page");
+    }
+    next();
+}, grantAccess('readAny', 'profile'), userController.getUsers);
+// Route de déconnexion
+router.get('/logout', function(req, res) {
+    // Détruire la session pour déconnecter l'utilisateur
+    req.session.destroy(function(err) {
+        if (err) {
+            // En cas d'erreur, renvoyer une erreur 500
+            return res.status(500).send("Erreur lors de la déconnexion");
+        } else {
+            // Rediriger vers la page de connexion
+            res.redirect('/login');
+        }
+    });
+});
+
+// Utiliser le routeur
 app.use('/', router);
 
+// Démarrer le serveur
 var port = process.env.PORT || 9000;
-
 app.listen(port, function () {
-    console.log("Server Has Started! port: ", port);
+    console.log("Le serveur a démarré sur le port :", port);
 });

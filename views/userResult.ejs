@@ -1,0 +1,32 @@
+<!-- views/usersResult.ejs -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Liste des utilisateurs</title>
+    <link rel="stylesheet" href="/style/style.css" media="screen" type="text/css"/>
+</head>
+<body>
+    <h1>Liste des utilisateurs</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Nom d'utilisateur</th>
+                <th>Email</th>
+                <th>Rôle</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% users.forEach(function(user) { %>
+                <tr>
+                    <td><%= user.username %></td>
+                    <td><%= user.email %></td>
+                    <td><%= user.role %></td>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+    <a href="/logout">Se déconnecter</a>
+</body>
+</html>
